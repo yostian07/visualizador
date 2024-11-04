@@ -1,23 +1,47 @@
-const WEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608';
+// src/services/api.ts
+
+const WEATHER_API_KEY = 'bd5e378503939ddaee76f12ad7a97608'; // Tu clave de API
 const WEATHER_API_URL = 'https://api.openweathermap.org/data/2.5';
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3';
 const EXCHANGE_API_URL = 'https://open.er-api.com/v6/latest';
 
+/**
+ * Obtiene el clima de una lista de ciudades.
+ * @param cities - Lista de nombres de ciudades.
+ * @param unit - Unidad de medida ('C' para Celsius, 'F' para Fahrenheit).
+ */
 export async function getWeather(cities: string[], unit: 'C' | 'F') {
   const unitSystem = unit === 'C' ? 'metric' : 'imperial';
-  const promises = cities.map(city =>
-    fetch(`${WEATHER_API_URL}/weather?q=${city}&units=${unitSystem}&appid=${WEATHER_API_KEY}`)
-      .then(res => res.json())
-      .then(data => ({
-        name: data.name,
-        temp: Math.round(data.main.temp),
-        condition: getWeatherCondition(data.weather[0].main),
-        humidity: data.main.humidity
-      }))
-  );
-  return Promise.all(promises);
+  const promises = cities.map(async (city) => {
+    try {
+      const response = await fetch(
+        `${WEATHER_API_URL}/weather?q=${encodeURIComponent(city)}&units=${unitSystem}&appid=${WEATHER_API_KEY}&lang=es`
+      );
+      const data = await response.json();
+      if (response.ok) {
+        return {
+          name: data.name,
+          temp: Math.round(data.main.temp),
+          condition: getWeatherCondition(data.weather[0].main),
+          humidity: data.main.humidity,
+        };
+      } else {
+        console.warn(`No se encontró información para la ciudad: ${city}`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Error al obtener los datos del clima para ${city}:`, error);
+      return null;
+    }
+  });
+  const results = await Promise.all(promises);
+  return results.filter((item) => item !== null);
 }
 
+/**
+ * Traduce el estado del clima a español.
+ * @param condition - Condición del clima en inglés.
+ */
 function getWeatherCondition(condition: string): string {
   const conditions: Record<string, string> = {
     Clear: 'Soleado',
@@ -26,10 +50,21 @@ function getWeatherCondition(condition: string): string {
     Snow: 'Nieve',
     Thunderstorm: 'Tormenta',
     Drizzle: 'Llovizna',
-    Mist: 'Neblina'
+    Mist: 'Neblina',
+    Smoke: 'Humo',
+    Haze: 'Calina',
+    Dust: 'Polvo',
+    Fog: 'Niebla',
+    Sand: 'Arena',
+    Ash: 'Ceniza',
+    Squall: 'Chubasco',
+    Tornado: 'Tornado',
   };
   return conditions[condition] || condition;
 }
+
+
+
 
 export async function getCryptoData(selectedCryptos: string[]) {
   const cryptoIds = {

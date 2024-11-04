@@ -38,6 +38,10 @@ function App() {
     weatherUnit: 'C'
   });
 
+  // Nuevo estado para la ciudad ingresada por el usuario
+  const [cityInput, setCityInput] = useState(''); 
+  const [singleCityWeather, setSingleCityWeather] = useState(null); // Nuevo estado para el clima de una sola ciudad
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,6 +78,29 @@ function App() {
     return () => clearInterval(interval);
   }, [settings]);
 
+  // Función para buscar el clima de una ciudad específica ingresada por el usuario
+  const handleCitySearch = async () => {
+    if (cityInput.trim() === '') {
+      alert("Por favor, ingresa el nombre de una ciudad.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await getWeather([cityInput], settings.weatherUnit);
+      if (result.length > 0) {
+        setSingleCityWeather(result[0]);
+      } else {
+        alert("No se encontraron datos para la ciudad ingresada.");
+      }
+    } catch (error) {
+      console.error("Error al obtener los datos del clima:", error);
+      alert("Hubo un problema al obtener los datos. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const themeClasses = {
     light: 'bg-gray-50',
     dark: 'bg-gray-900',
@@ -93,15 +120,42 @@ function App() {
     switch (currentSection) {
       case 'clima':
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {weatherData.map((city: any) => (
+          <div>
+            <div className="mb-4 flex items-center">
+              <input
+                type="text"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                placeholder="Ingresa el nombre de una ciudad"
+                className="border p-2 rounded-md w-64"
+              />
+              <button
+                onClick={handleCitySearch}
+                className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md"
+              >
+                Buscar
+              </button>
+            </div>
+  
+            {singleCityWeather && (
               <WeatherCard 
-                key={city.name} 
-                data={city} 
+                key={singleCityWeather.name} 
+                data={singleCityWeather} 
                 theme={theme}
                 unit={settings.weatherUnit}
               />
-            ))}
+            )}
+  
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+              {weatherData.map((city: any) => (
+                <WeatherCard 
+                  key={city.name} 
+                  data={city} 
+                  theme={theme}
+                  unit={settings.weatherUnit}
+                />
+              ))}
+            </div>
           </div>
         );
       case 'crypto':
@@ -138,7 +192,9 @@ function App() {
             />
           </div>
         );
+      case 'dashboard':
       default:
+        // Asegurémonos de que el dashboard muestra algo
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -178,6 +234,8 @@ function App() {
         );
     }
   };
+  
+
 
   return (
     <div className={`min-h-screen ${themeClasses[theme as keyof typeof themeClasses]}`}>

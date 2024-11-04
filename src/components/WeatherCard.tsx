@@ -9,9 +9,10 @@ interface WeatherCardProps {
     humidity: number;
   };
   theme: string;
+  unit: 'C' | 'F'; // Añadimos la unidad para mostrarla en el componente
 }
 
-export function WeatherCard({ data, theme }: WeatherCardProps) {
+export function WeatherCard({ data, theme, unit }: WeatherCardProps) {
   const cardClass = theme === 'dark' 
     ? 'bg-gray-800 text-white' 
     : 'bg-white';
@@ -24,7 +25,9 @@ export function WeatherCard({ data, theme }: WeatherCardProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-3xl font-bold">{data.temp}°C</p>
+          <p className="text-3xl font-bold">
+            {data.temp}°{unit} {/* Muestra la unidad aquí */}
+          </p>
           <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
             {data.condition}
           </p>
